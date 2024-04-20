@@ -24,13 +24,13 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 
 	RestTemplate restTemplate = new RestTemplate();
 
-	String url = "/ip/get_ips"; // ???
+	String url = "/ip/get_ips"; 
 	String host = "localhost";
 	int port = 8484;
 
-	List<String> ipBlockList;
+	Set<String> ipBlockList;
 
-	@Scheduled(fixedRate = TIME_UPDATED)
+	@Scheduled(fixedRateString = "${app.time.updated:600000}")  //1 min ??
 	public void periodacallyCallingRemoteProvider() {
 		getUpdateIpBlockList();
 	}
@@ -62,14 +62,14 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 	}
 
 	@SuppressWarnings("unchecked")
-	private List<String> getUpdateIpBlockList() {
+	private Set<String> getUpdateIpBlockList() {
 		ipBlockList.clear();
 		try {
 			ResponseEntity<?> responseEntity = restTemplate.exchange(getFullUrl(), HttpMethod.GET, null, List.class);
 			if (!responseEntity.getStatusCode().is2xxSuccessful()) {
 				throw new Exception((String) responseEntity.getBody());
 			}
-			ipBlockList = (List<String>) responseEntity.getBody();
+			ipBlockList = (Set<String>) responseEntity.getBody();
 			log.debug("updated block list is {} ", ipBlockList);
 		} catch (Exception e) {
 			log.error("Blocking Data Provider's server is unavailable, {}", e.getMessage());
@@ -85,9 +85,9 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 //This is supposed end-point method for BlockingDataprovider controller:
 
 //	@GetMapping("${app.blocking.data.list.url:/ip/get_ips}")
-//	List<String> getBlockingList (String ip) {
+//	Set<String> getBlockingList (String ip) {
 //		log.debug("received IP: {}", ip);
-//		List<String> res = providerService.getBlockingList();
+//		Set<String> res = providerService.getBlockingList();
 //		log.trace("received blocking ip list: {}", res);
 //		return res;
 //	}
