@@ -28,20 +28,20 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 	String host = "localhost";
 	int port = 8484;
 
-	Set<String> ipBlockList;
+	Set<String> ipBlockSet;
 
-	@Scheduled(fixedRateString = "${app.time.updated:600000}")  //1 min ??
+	@Scheduled(fixedRateString = "${app.time.updated:600000}")  //10 min 
 	public void periodacallyCallingRemoteProvider() {
 		getUpdateIpBlockList();
 	}
-	
+	 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
 
 		String ipClient = getClientIp(request);
 
-		if (ipBlockList.contains(ipClient)) {
+		if (ipBlockSet.contains(ipClient)) {
 			response.sendError(HttpServletResponse.SC_FORBIDDEN, "access denied");
 
 		} else {
@@ -53,7 +53,7 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 
 	}
 
-	private String getClientIp(HttpServletRequest request) {
+	public String getClientIp(HttpServletRequest request) {
 		String ip = request.getHeader("X-Forwarded-For");
 		if (ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip)) {
 			ip = request.getRemoteAddr();
@@ -62,23 +62,23 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Set<String> getUpdateIpBlockList() {
-		ipBlockList.clear();
+	public Set<String> getUpdateIpBlockList() {
+		ipBlockSet.clear();
 		try {
-			ResponseEntity<?> responseEntity = restTemplate.exchange(getFullUrl(), HttpMethod.GET, null, List.class);
+			ResponseEntity<?> responseEntity = restTemplate.exchange(getFullUrl(), HttpMethod.GET, null, Set.class);
 			if (!responseEntity.getStatusCode().is2xxSuccessful()) {
 				throw new Exception((String) responseEntity.getBody());
 			}
-			ipBlockList = (Set<String>) responseEntity.getBody();
-			log.debug("updated block list is {} ", ipBlockList);
+			ipBlockSet = (Set<String>) responseEntity.getBody();
+			log.debug("updated block list is {} ", ipBlockSet);
 		} catch (Exception e) {
 			log.error("Blocking Data Provider's server is unavailable, {}", e.getMessage());
 		}
 
-		return ipBlockList;
+		return ipBlockSet;
 	}
 
-	private String getFullUrl() {
+	public String getFullUrl() {
 		return String.format("http://%s:%d%s", host, port, url);
 	}
 
