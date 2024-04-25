@@ -3,6 +3,7 @@ package telran.blocker;
 import java.io.IOException;
 import java.util.*;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,13 +21,16 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class IpBlockingFilter extends OncePerRequestFilter {
 
-	private static final long TIME_UPDATED = 600000; // 10 min for example; this is list update period
+//	private static final long TIME_UPDATED = 600000; // 10 min for example; this is list update period
 
 	RestTemplate restTemplate = new RestTemplate();
-
-	String url = "/ip/get_ips"; 
-	String host = "localhost";
-	int port = 8484;
+	
+	@Value("${app.filter.blocking.data.provider.url:/ip/get_ips}")
+	String url;
+	@Value("${app.filter.blocking.data.provider.host:localhost}")
+	String host;
+	@Value("${app.filter.blocking.data.provider.port:8484}")
+	int port;
 
 	Set<String> ipBlockSet;
 
@@ -82,14 +86,5 @@ public class IpBlockingFilter extends OncePerRequestFilter {
 		return String.format("http://%s:%d%s", host, port, url);
 	}
 
-//This is supposed end-point method for BlockingDataprovider controller:
-
-//	@GetMapping("${app.blocking.data.list.url:/ip/get_ips}")
-//	Set<String> getBlockingList (String ip) {
-//		log.debug("received IP: {}", ip);
-//		Set<String> res = providerService.getBlockingList();
-//		log.trace("received blocking ip list: {}", res);
-//		return res;
-//	}
 
 }
